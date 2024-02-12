@@ -17,8 +17,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
+import file_utils
 
-from .file_utils import cached_path
+
 
 logger = logging.getLogger(__name__)
 
@@ -489,8 +490,8 @@ class OpenAIGPTPreTrainedModel(nn.Module):
             config_file = os.path.join(pretrained_model_name_or_path, CONFIG_NAME)
         # redirect to the cache, if necessary
         try:
-            resolved_archive_file = cached_path(archive_file, cache_dir=cache_dir)
-            resolved_config_file = cached_path(config_file, cache_dir=cache_dir)
+            resolved_archive_file = file_utils.cached_pathh(archive_file, cache_dir=cache_dir)
+            resolved_config_file = file_utils.cached_path(config_file, cache_dir=cache_dir)
         except EnvironmentError:
             logger.error(
                 "Model name '{}' was not found in model name list ({}). "

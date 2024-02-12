@@ -15,7 +15,7 @@ class Fh21Dataset(Dataset):
     def __init__(self, opt):
         
         # TODO
-        self.data_dir = '/home/mmvg/Desktop/COVID/reports/processed_fh21_precise_tag/'
+        self.data_dir = 'C:/Users/62811/COV-CTR/ASKG/report/processed_fh21_precise_tag/'
         self.num_medterm = opt.num_medterm
 
         with open(os.path.join(self.data_dir, 'fh21.pkl'), 'rb') as f:

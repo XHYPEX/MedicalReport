@@ -18,7 +18,7 @@ class CHXrayDataSet2(Dataset):
 
         self.data_dir = opt.data_dir
         # TODO
-        self.pkl_dir = os.path.join('/home/mmvg/Desktop/COVID', 'reports')
+        self.pkl_dir = os.path.join('C:/Users/62811/COV-CTR/ASKG/', 'report')
         self.img_dir = os.path.join(self.data_dir, 'NLMCXR_png')
 
         self.num_medterm = opt.num_medterm

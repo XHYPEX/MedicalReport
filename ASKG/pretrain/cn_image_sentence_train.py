@@ -3,7 +3,7 @@ import opts
 import pickle
 import cv2
 
-import eval_utils
+# import eval_utils
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
@@ -18,6 +18,7 @@ from read_fh21_data import get_loader2
 from tqdm import tqdm, trange
 from sklearn.metrics import roc_auc_score
 import torchvision.transforms as transforms
+from efficientnet_pytorch.model import EfficientNet
 
 import codecs
 import sys
@@ -42,7 +43,7 @@ def Attention_gen_patchs(ori_image, fm_cuda):
     size_upsample = (224, 224) 
     bz, nc, h, w = feature_conv.shape
 
-    patchs_cuda = torch.FloatTensor().cuda()
+    patchs_cuda = torch.FloatTensor()   #.cuda()
 
     for i in range(0, bz):
         feature = feature_conv[i]
@@ -71,7 +72,7 @@ def Attention_gen_patchs(ori_image, fm_cuda):
         image_crop = image[minh:maxh, minw:maxw, :] * 256 # because image was normalized before
         image_crop = preprocess(Image.fromarray(image_crop.astype('uint8')).convert('RGB')) 
 
-        img_variable = torch.autograd.Variable(image_crop.reshape(3, 224, 224).unsqueeze(0).cuda())
+        img_variable = torch.autograd.Variable(image_crop.reshape(3, 224, 224).unsqueeze(0))
 
         patchs_cuda = torch.cat((patchs_cuda, img_variable), 0)
 
@@ -313,8 +314,8 @@ def eval():
     id2captions_t = {}
     id2captions_g = {}
 
-    gt = torch.FloatTensor().cuda()
-    pred = torch.FloatTensor().cuda()
+    gt = torch.FloatTensor()    #.cuda()
+    pred = torch.FloatTensor()  #.cuda()
 
     count = 0
     with torch.no_grad():
@@ -370,8 +371,9 @@ def eval():
 
     lang_stats = None
     if opt.language_eval == 1:
-        lang_stats = eval_utils.evaluate(id2captions_t, id2captions_g, save_to='./results/',
-                                         split='test_graph_pretrain')
+        # lang_stats = eval_utils.evaluate(id2captions_t, id2captions_g, save_to='./results/',
+        #                                  split='test_graph_pretrain')
+        None
 
     return lang_stats
 
@@ -395,8 +397,8 @@ def test():
     id2captions_t = {}
     id2captions_g = {}
 
-    gt = torch.FloatTensor().cuda()
-    pred = torch.FloatTensor().cuda()
+    gt = torch.FloatTensor()    #.cuda()
+    pred = torch.FloatTensor()  #.cuda()
 
     count = 0
     results = {}
@@ -467,8 +469,9 @@ def test():
 
     lang_stats = None
     if opt.language_eval == 1:
-        lang_stats = eval_utils.evaluate(id2captions_t, id2captions_g, save_to='./results/',
-                                         split='test_graph_pretrain')
+        # lang_stats = eval_utils.evaluate(id2captions_t, id2captions_g, save_to='./results/',
+        #                                  split='test_graph_pretrain')
+        None
 
 
     AUROCs = compute_AUCs(gt, pred)
@@ -495,8 +498,8 @@ def auc_test():
     id2captions_t = {}
     id2captions_g = {}
 
-    gt = torch.FloatTensor().cuda()
-    pred = torch.FloatTensor().cuda()
+    gt = torch.FloatTensor()    #.cuda()
+    pred = torch.FloatTensor()  #.cuda()
 
     count = 0
     with torch.no_grad():
@@ -570,24 +573,31 @@ if __name__ == '__main__':
     with open(config.tag_decoderdir, 'rb') as f:
         tag_decoder = pickle.load(f)
 
+    print("type of opt.num_medterm : ", opt.num_medterm)
+    # efficientNet = EfficientNet.from_pretrained('efficientnet-b0', num_classes=opt.num_medterm)
+    cnn_model = EfficientNet.from_pretrained('efficientnet-b0', num_classes=opt.num_medterm)
+    aux_model = EfficientNet.from_pretrained('efficientnet-b0', num_classes=opt.num_medterm)
 
-    cnn_model = Densenet121_AG(pretrained=False, num_classes=opt.num_medterm).cuda()
-    aux_model = Densenet121_AG(pretrained=False, num_classes =opt.num_medterm).cuda()
-    fusion_model = Fusion_Branch(input_size=1024, output_size=opt.num_medterm).cuda()
-    model = SentenceLMHeadModel(tag_decoder, config).cuda()
+    # cnn_model = Densenet121_AG(pretrained=False, num_classes=opt.num_medterm)   #.cuda()
+    # aux_model = Densenet121_AG(pretrained=False, num_classes =opt.num_medterm)  #.cuda()
+        
+    # cnn_model = EfficientNet(pretrained=False, num_classes=opt.num_medterm)   #.cuda()
+    # aux_model = EfficientNet(pretrained=False, num_classes =opt.num_medterm)  #.cuda()
+    fusion_model = Fusion_Branch(input_size=1024, output_size=opt.num_medterm)  #.cuda()
+    model = SentenceLMHeadModel(tag_decoder, config)    #.cuda()
     model = nn.DataParallel(model)
     cnn_model = nn.DataParallel(cnn_model)
     aux_model = nn.DataParallel(aux_model)
     fusion_model = nn.DataParallel(fusion_model)
     
-    med_crit = nn.BCELoss().cuda()
-    outputs_crit = nn.CrossEntropyLoss(ignore_index=-1).cuda()
+    med_crit = nn.BCELoss() #.cuda()
+    outputs_crit = nn.CrossEntropyLoss(ignore_index=-1) #.cuda()
 
     rnn_NoamOpt = NoamOpt(opt.d_model, opt.factor, opt.warmup, torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
     # rnn_NoamOpt = optim.Adam(model.parameters(), lr=opt.learning_rate, weight_decay=opt.weight_decay) 
     # cnn_optimizer = optim.Adam(model.parameters(), lr=opt.cnn_learning_rate, weight_decay=opt.weight_decay)
     cnn_optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=opt.weight_decay)
-    load_best_model()
+    # load_best_model()
     # update_encoder_model(opt.encoder_path)
     # test()
     # eval()
